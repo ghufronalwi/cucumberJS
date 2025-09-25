@@ -2,33 +2,41 @@
 const { BeforeAll, AfterAll, Before, After, setDefaultTimeout } = require('@cucumber/cucumber');
 const { chromium, firefox, webkit } = require('playwright');
 
-setDefaultTimeout(60 * 1000);
+const DEFAULT_TIMEOUT = parseInt(process.env.TIMEOUT || '30000');
+
+setDefaultTimeout(DEFAULT_TIMEOUT); // Cucumber step timeout
 
 let browser;
 let context;
 let page;
-let unsupported = false; // track unsupported browsers
+let unsupported = false;
 
 BeforeAll(async () => {
   const browserName = process.env.BROWSER || 'chromium';
+  const slowMo = parseInt(process.env.SLOWMO || '0', 10);
+  const headless = process.env.HEADLESS !== 'false'; // default true
 
   if (browserName === 'firefox') {
-    browser = await firefox.launch({ headless: false, slowMo: 200 });
+    browser = await firefox.launch({ headless, slowMo });
   } else if (browserName === 'chromium') {
-    browser = await chromium.launch({ headless: false, slowMo: 200 });
+    browser = await chromium.launch({ headless, slowMo });
   } else if (browserName === 'webkit') {
-    browser = await webkit.launch({ headless: false, slowMo: 200 });
+    browser = await webkit.launch({ headless, slowMo });
   } else {
     console.log(`⚠️ Browser "${browserName}" is not registered in hooks.js, skipping tests...`);
     unsupported = true;
   }
 });
 
-// Only register these hooks if supported
 Before(async () => {
-  if (unsupported) return 'skipped';  // <-- Cucumber will mark scenario as skipped
+  if (unsupported) return 'skipped';
   context = await browser.newContext();
   page = await context.newPage();
+
+  // Set playwright default timeouts
+  page.setDefaultTimeout(DEFAULT_TIMEOUT);            // for actions (click, fill, etc.)
+  page.setDefaultNavigationTimeout(DEFAULT_TIMEOUT);  // for page.goto, navigation waits
+
   global.page = page;
 });
 
