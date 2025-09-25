@@ -13,7 +13,7 @@ let unsupported = false;
 
 BeforeAll(async () => {
   const browserName = process.env.BROWSER || 'chromium';
-  const slowMo = parseInt(process.env.SLOWMO || '0', 10);
+  const slowMo = parseInt(process.env.SLOWMO || '0');
   const headless = process.env.HEADLESS !== 'false'; // default true
 
   if (browserName === 'firefox') {
